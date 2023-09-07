@@ -65,7 +65,7 @@ def train(save_path):
     # for _ in tqdm(range(1)):
     #     for pre_load in range(19):
     #         env.test(pre_load)
-    #         print(pre_load)
+    #         print('pre_load:',pre_load)
     #         x = (env.data[1][0][0] + env.data[2][0][0]) / 2
     #         y = (env.data[1][0][2] + env.data[2][0][2]) / 2
     #         rotation = (math.atan2(env.data[2][0][2] - env.data[1][0][2], env.data[2][0][0] - env.data[1][0][0]))*180/math.pi
@@ -89,15 +89,17 @@ def train(save_path):
     #
     #             observation = observation_new
     #             if done == True:
+    #                 print('done:',done)
     #                 break
     #             if replay_buffer.len() > batch_size:
     #                 for i in range(update_itr):
     #                     _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
     #                                     target_entropy=-1. * args.action_dim)
+    #         print('score:',score)
 
     for pre_load in range(20):
+        env.test(pre_load)
         for _ in tqdm(range(10)):
-            env.test(pre_load)
             x = (env.data[1][0][0] + env.data[2][0][0]) / 2
             y = (env.data[1][0][2] + env.data[2][0][2]) / 2
             rotation = (math.atan2(env.data[2][0][2] - env.data[1][0][2], env.data[2][0][0] - env.data[1][0][0]))*180/math.pi
@@ -121,6 +123,7 @@ def train(save_path):
 
                 observation = observation_new
                 if done == True:
+                    # print('done:',done)
                     break
                 if replay_buffer.len() > batch_size:
                     for i in range(update_itr):

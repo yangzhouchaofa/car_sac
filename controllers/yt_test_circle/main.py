@@ -17,7 +17,7 @@ STEPS_PER_EPISODE = 300
 EPISODE_LIMIT = 500
 score_history_path = 'score/score_history'                   #############change
 score_history_continue_path = 'score/score_history_continue' ##############change
-fig_path = 'figs/score1.png'  #############change
+fig_path = 'figs/score2.png'  #############change
 path_history_path = 'path/path_history'                      #############change
 train = 'train'
 

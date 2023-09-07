@@ -218,12 +218,12 @@ class Hunter(RobotSupervisor):
             reward += -5
 
         if self.disReward <= self.DistanceThreshold and self.car_crash() is False:
-            temp = 0
+            temp = 5
             if abs(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold \
                     and angleDis < self.RotationThreshold:
-                temp = 40
+                temp += 40
                 if angleDis > 0:
-                    temp = 40 - 40*normalize(angleDis, 0, self.RotationThreshold)
+                    temp += -40*normalize(angleDis, 0, self.RotationThreshold)
             reward += temp
         # must add this or the gradient is 'inf', then the loss is 'nan'
         if reward == float('-inf') or reward == float('inf'):
@@ -388,17 +388,17 @@ class Hunter(RobotSupervisor):
         self.PICKLE0 = 'laser.pkl'
         self.PICKLE1 = 'gpsfront.pkl'
         self.PICKLE2 = 'gpsback.pkl'
-        self.PICKLE4 = 'motor.pkl'
-        self.PICKLE5 = 'obs.pkl'
-        self.PICKLE = [self.PICKLE0, self.PICKLE1, self.PICKLE2, self.PICKLE4]
+        self.PICKLE3 = 'motor.pkl'
+        self.PICKLE4 = 'obs.pkl'
+        self.PICKLE = [self.PICKLE0, self.PICKLE1, self.PICKLE2, self.PICKLE3]
         self.obs = []
         self.data = []
         self.num = num
 
-
-        with open(os.path.join(self.PATH % self.num, self.PICKLE5), 'rb') as c:
+        # 记录障碍物的位置
+        with open(os.path.join(self.PATH % self.num, self.PICKLE4), 'rb') as c:
             self.obs.append(pickle.load(c))
-
+        # 记录雷达、gps的值
         for i in range(len(self.PICKLE)):
             with open(os.path.join(self.PATH % self.num, self.PICKLE[i]), 'rb') as c:
                 self.data.append(pickle.load(c))
@@ -416,6 +416,7 @@ class Hunter(RobotSupervisor):
         for i in range(3):
             self.data[i] = self.data[i][::5]
 
+        # 对齐motor数据的时间戳
         data_motor = [0] * len(self.data[1])  # 创建一个数组用来保存查找后的速度
         for i in range(len(self.data[1])):  # 对于查找后的长度
             actual_time = self.data[1][i][-1]
@@ -428,15 +429,36 @@ class Hunter(RobotSupervisor):
                     diff_0 = diff_j
         self.data[3] = data_motor
 
+        # 去掉时间戳
         for i in range(len(self.PICKLE)):
             for j in range(len(self.data[i])):
                 self.data[i][j] = self.data[i][j][:-1]
 
+        for i in range(5):
+            self.data[3].append([0.0, 0.0])
+            self.data[2].append(self.data[2][-1])
+            self.data[1].append(self.data[1][-1])
+            self.data[0].append(self.data[0][-1])
+
+        x = (self.data[1][0][0] + self.data[2][0][0]) / 2
+        y = (self.data[1][0][2] + self.data[2][0][2]) / 2
+        rotation = (math.atan2(self.data[2][0][2] - self.data[1][0][2],
+                               self.data[2][0][0] - self.data[1][0][0])) * 180 / math.pi
+
+        self.initialization(x=x, z=y, rotation=rotation, tar=self.tarPosition,)
+        self.test_get_observations(0)
+        self.disRewardOld = self.disReward
+        for i in range(len(self.data[0])):
+            self.test_get_observations(i)
+            action = self.action
+            self.step(action)
+
+        gpsBack = self.gps_back.getValues()
+        gpsFront = self.gps_front.getValues()
         self.tarPosition = []
-        self.tarPosition.append(self.data[2][-1][0])  # x
-        self.tarPosition.append(self.data[2][-1][2])  # y
-        self.tarPosition.append(
-            -math.atan2(self.data[1][-1][2] - self.data[2][-1][2], self.data[1][-1][0] - self.data[2][-1][0]))
+        self.tarPosition.append(gpsBack[0])  # x
+        self.tarPosition.append(gpsBack[2])  # y
+        self.tarPosition.append(-math.atan2(gpsFront[2] - gpsBack[2], gpsFront[0] - gpsBack[0]))
 
     def test_get_observations(self, i):
 
@@ -502,3 +524,4 @@ class Hunter(RobotSupervisor):
         # ******************************************************************************
 
         return observation
+
