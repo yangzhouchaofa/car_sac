@@ -133,8 +133,8 @@ class Hunter(RobotSupervisor):
             noise_laser = 0
             noise_odom = 0
 
-        self.position.append(gpsBack[0])  # x
-        self.position.append(gpsBack[2])  # y
+        self.position.append((gpsBack[0]+gpsFront[0])/2)  # x
+        self.position.append((gpsBack[2]+gpsFront[2])/2)  # y
 
         self.position.append(-math.atan2(gpsFront[2] - gpsBack[2], gpsFront[0] - gpsBack[0]))
 
@@ -218,7 +218,7 @@ class Hunter(RobotSupervisor):
             reward += -5
 
         if self.disReward <= self.DistanceThreshold and self.car_crash() is False:
-            temp = 5
+            temp = 0
             if abs(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold \
                     and angleDis < self.RotationThreshold:
                 temp += 40
@@ -456,8 +456,8 @@ class Hunter(RobotSupervisor):
         gpsBack = self.gps_back.getValues()
         gpsFront = self.gps_front.getValues()
         self.tarPosition = []
-        self.tarPosition.append(gpsBack[0])  # x
-        self.tarPosition.append(gpsBack[2])  # y
+        self.tarPosition.append((gpsBack[0]+gpsFront[0])/2)  # x
+        self.tarPosition.append((gpsBack[2]+gpsFront[2])/2)  # y
         self.tarPosition.append(-math.atan2(gpsFront[2] - gpsBack[2], gpsFront[0] - gpsBack[0]))
 
     def test_get_observations(self, i):

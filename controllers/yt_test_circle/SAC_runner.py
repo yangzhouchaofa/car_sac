@@ -95,7 +95,7 @@ def train(save_path):
     #                 for i in range(update_itr):
     #                     _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
     #                                     target_entropy=-1. * args.action_dim)
-    #         print('score:',score)
+    #         # print('score:',score)
 
     for pre_load in range(20):
         env.test(pre_load)
