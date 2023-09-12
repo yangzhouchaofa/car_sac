@@ -6,8 +6,10 @@ import torch.nn as nn
 import torch.optim as optim
 
 class SAC_Trainer():
+    # def __init__(self, input_dims, n_actions, action_range, buffer, tau=0.005, reward_scale=2,
+    #              gamma=0.95, batch_size=2048, hidden_dim=512):
     def __init__(self, input_dims, n_actions, action_range, buffer, tau=0.005, reward_scale=2,
-                 gamma=2, batch_size=2048, hidden_dim=1024):
+                 gamma=2, batch_size=2048, hidden_dim=256):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.buffer = buffer
         self.gamma = gamma

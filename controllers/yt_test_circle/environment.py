@@ -16,18 +16,20 @@ from main import STEPS_PER_EPISODE
 class Hunter(RobotSupervisor):
 
     def __init__(self):
-        super().__init__(timestep=500)
-                            #       speed   x    y    angle   dx     dy    angle_d   8
-                            # min   -1.4  -6.2 -4.92  -3.14  -6.2  -4.92   -3.14
-                            # max    1.4  1.82  1.99   3.14  1.82   1.99    3.14
+        super().__init__(timestep=1000)
+        #       speed   x    y    angle   dx     dy    angle_d   8
+        # min   -1.4  -6.2 -4.92  -3.14  -6.2  -4.92   -3.14
+        # max    1.4  1.82  1.99   3.14  1.82   1.99    3.14
         self.observation_space = 14
-                            #speed        turn
-                            #(-1,1)*1.4  (-1,1)*0.4
-        self.action_space = Box(low=np.array([-1,-1]),high=np.array([1,1]),dtype=np.float64)
+        # speed        turn
+        # (-1,1)*1.4  (-1,1)*0.4
+        self.action_space = Box(low=np.array([-1, -1]), high=np.array([1, 1]), dtype=np.float64)
         self.DistanceRewardInterval = 0.15
         self.DistanceThreshold = 0.10
         self.RotationThreshold = 0.20
         self.CurrentSpeed = 0
+        self.w = 0
+        self.w_list = []
         self.SpeedTheshold = 0.1
         self.park_count = 0
         self.crash_count = 0
@@ -105,9 +107,9 @@ class Hunter(RobotSupervisor):
 
     def SpeedChange(self):
         self.Speed_list.append(self.CurrentSpeed)
-        if len(self.Speed_list) <= 1:
+        if (len(self.Speed_list) <= 1) or (len(self.w_list) <= 1):
             return False
-        elif self.Speed_list[-2] * self.Speed_list[-1] < 0:
+        elif (self.Speed_list[-2] * self.Speed_list[-1] < -0.1) or (self.w_list[-2] * self.w_list[-1] < -0.1):
             return True
         else:
             return False
@@ -133,8 +135,8 @@ class Hunter(RobotSupervisor):
             noise_laser = 0
             noise_odom = 0
 
-        self.position.append(gpsBack[0])  # x
-        self.position.append(gpsBack[2])  # y
+        self.position.append((gpsBack[0] + gpsFront[0]) / 2)  # x
+        self.position.append((gpsBack[2] + gpsFront[2]) / 2)  # y
 
         self.position.append(-math.atan2(gpsFront[2] - gpsBack[2], gpsFront[0] - gpsBack[0]))
 
@@ -156,27 +158,27 @@ class Hunter(RobotSupervisor):
         #       speed   x    y    angle   dx     dy    angle_d   8
         # min   -1.4  -6.2 -4.92  -3.14  -6.2  -4.92   -3.14
         # max    1.4  1.82  1.99   3.14  1.82   1.99    3.14
-        #当前位置：
+        # 当前位置：
         observation.append(normalize_to_range(np.clip(self.position[0] + noise_odom, 0.36, 4.25), 0.36, 4.25, -1, 1))
         observation.append(normalize_to_range(np.clip(self.position[1] + noise_odom, -0.22, 2.61), -0.22, 2.61, -1, 1))
         observation.append(normalize_to_range(np.clip(self.position[2], -3.14, 3.14), -3.14, 3.14, -1, 1))
         observation.append(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1))
         observation.append(normalize_to_range(np.clip(self.disReward, -2.25, 2.25), -2.25, 2.25, -1, 1))
         observation.append(normalize_to_range(np.clip(self.angReward, -3.14, 3.14), -3.14, 3.14, -1, 1))
-        observation.append(normalize_to_range(np.clip(self.tarPosition[0], -0.67, 4), -0.67, 4, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.tarPosition[0], 0.67, 4), 0.67, 4, -1, 1))
         observation.append(normalize_to_range(np.clip(self.tarPosition[1], 0.2, 2.3), 0.2, 2.3, -1, 1))
         observation.append(normalize_to_range(np.clip(self.tarPosition[2], -3.14, 3.14), -3.14, 3.14, -1, 1))
         # observation.append(min(self.laserRange))
 
         # ******************************************************************************
-        self.laser_choose = [0, 30, 40, 60,
-                             90, 120, 140, 150,
-                             180, 210, 220, 240,
-                             270, 300, 320, 330]
-        self.crash_range = [0.353, 0.408, 0.456, 0.332,
-                            0.288, 0.332, 0.456, 0.408,
-                            0.353, 0.408, 0.456, 0.332,
-                            0.288, 0.332, 0.456, 0.408]
+        self.laser_choose = [0, 10, 20, 30, 40, 50, 60, 70, 80,
+                             90, 100, 110, 120, 130, 140, 150, 160, 170,
+                             180, 190, 200, 210, 220, 230, 240, 250, 260,
+                             270, 280, 290, 300, 310, 320, 330, 340, 350]
+        self.crash_range = [0.353, 0.358, 0.375, 0.408, 0.456, 0.376, 0.332, 0.306, 0.292,
+                            0.288, 0.292, 0.306, 0.332, 0.376, 0.456, 0.408, 0.375, 0.358,
+                            0.353, 0.358, 0.375, 0.408, 0.456, 0.376, 0.332, 0.306, 0.292,
+                            0.288, 0.292, 0.306, 0.332, 0.376, 0.456, 0.408, 0.375, 0.358]
         for choose in range(len(self.laser_choose)):
             self.laserRange[self.laser_choose[choose]] -= self.crash_range[choose]
         for choose in self.laser_choose:
@@ -185,12 +187,13 @@ class Hunter(RobotSupervisor):
 
         return observation
 
-    def apply_action(self, action):  #speed   turn
+    def apply_action(self, action):  # speed   turn
         for i in range(2):
-            action[i] = np.clip(action[i],-1,1)
-        self.motorIn(action[0]*5,action[1]*5)
+            action[i] = np.clip(action[i], -1, 1)
+        self.motorIn(action[0] * 5, action[1] * 5)
         # print(action)
-        self.CurrentSpeed = (action[0]+action[1])/2
+        self.CurrentSpeed = (action[0] + action[1]) / 2
+        self.w = action[0] - action[1]
 
     def get_reward(self, action):
         reward = 0
@@ -200,8 +203,9 @@ class Hunter(RobotSupervisor):
 
         reward -= 0.1
         if deltaDis > 0 and self.car_crash() is False:
-            if (int)(self.disReward / self.DistanceRewardInterval) < (int)(self.disRewardOld / self.DistanceRewardInterval):
-                reward += 0.1 * normalize_to_range(np.clip(2.25-self.disReward,0,2.25),0,2.25,0,1)
+            if (int)(self.disReward / self.DistanceRewardInterval) < (int)(
+                    self.disRewardOld / self.DistanceRewardInterval):
+                reward += 0.1 * normalize_to_range(np.clip(2.25 - self.disReward, 0, 2.25), 0, 2.25, 0, 1)
             if angleDis < math.pi / 2:
                 reward += 0.1 * normalize_to_range(math.pi / 2 - angleDis, 0, math.pi / 2, 0, 1)
 
@@ -209,27 +213,27 @@ class Hunter(RobotSupervisor):
             # note that '/ 3' is a hard coded value here, which I introduced after tuning the penalty to occur less frequently than
             # the reward, in order to not 'scare' the AI of performing corrective maneuvers where it has to first increase the
             # distance to the target parking spot.
-            if (int)(self.disReward / self.DistanceRewardInterval/2) > (int)(self.disRewardOld / self.DistanceRewardInterval/2):
+            if (int)(self.disReward / self.DistanceRewardInterval / 2) > (int)(
+                    self.disRewardOld / self.DistanceRewardInterval / 2):
                 reward += -1
-
 
         # Check task completion (= position and rotation lower than threshold)
         if self.car_crash() is True:
             reward += -5
 
         if self.disReward <= self.DistanceThreshold and self.car_crash() is False:
-            temp = 5
+            temp = 0
             if abs(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold \
                     and angleDis < self.RotationThreshold:
                 temp += 40
                 if angleDis > 0:
-                    temp += -40*normalize(angleDis, 0, self.RotationThreshold)
+                    temp += -40 * normalize(angleDis, 0, self.RotationThreshold)
             reward += temp
         # must add this or the gradient is 'inf', then the loss is 'nan'
         if reward == float('-inf') or reward == float('inf'):
             reward = 0
 
-        if self.SpeedChange() is True :
+        if self.SpeedChange() is True:
             reward -= 1
         # if self.CurrentSpeed == 0 and self.disReward >= self.DistanceThreshold:
         #     reward -= 0.1
@@ -251,13 +255,12 @@ class Hunter(RobotSupervisor):
             return False
         elif self.disReward <= self.DistanceThreshold and \
                 abs(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold and \
-                abs(self.angReward) < self.RotationThreshold: # math.pi / 2
+                abs(self.angReward) < self.RotationThreshold:  # math.pi / 2
             self.complete = 1
             return True
         else:
             self.complete = 0
             return False
-
 
     def solved(self):
         # print('solved')
@@ -276,13 +279,16 @@ class Hunter(RobotSupervisor):
     def get_info(self):
         pass
 
-    def random_initialization(self, rb_node = None, Radius = None, tar = None, next = None):
+    def random_initialization(self, rb_node=None, Radius=None, tar=None, next=None):
+        self.tarPosition[0] = random.uniform(0.67,4)
+        self.tarPosition[1] = random.uniform(0,2.3)
+        self.tarPosition[2] = random.uniform(-3.14,3.14)
 
-        x_range1 = [0.67,1.5]
-        x_range2 = [1.5,2.5]
-        x_range3 = [2.5,4]
-        z_range1 = [0,2.3]
-        z_range2 = [1.3,2.3]
+        # x_range1 = [0.67, 1.5]
+        # x_range2 = [1.5, 2.5]
+        # x_range3 = [2.5, 4]
+        # z_range1 = [0, 2.3]
+        # z_range2 = [1.3, 2.3]
 
         if rb_node == None:
             rb_node = self.getFromDef("yt")
@@ -292,25 +298,12 @@ class Hunter(RobotSupervisor):
         self.reset()
         self.motorIn(0, 0)
 
-        region = [[x_range1,z_range1],[x_range2,z_range1],[x_range3,z_range1],[x_range2,z_range2]]
-        if next == 0:
-            x = random.uniform(region[3][0][0],region[3][0][1])
-            z = random.uniform(region[3][1][0],region[3][1][1])
-        elif next == 1:
-            x = random.uniform(region[1][0][0], region[1][0][1])
-            z = random.uniform(region[1][1][0], region[1][1][1])
-        elif next == 2:
-            x = random.uniform(region[0][0][0], region[0][0][1])
-            z = random.uniform(region[0][1][0], region[0][1][1])
-        elif next == 3:
-            x = random.uniform(region[2][0][0], region[2][0][1])
-            z = random.uniform(region[2][1][0], region[2][1][1])
-        else:
-            x = random.uniform(x_range1[0], x_range3[1])
-            z = random.uniform(z_range1[0], z_range1[1])
+        x = random.uniform(max(self.tarPosition[0] - next, 0.67), min(self.tarPosition[0] + next, 4))
+        z = random.uniform(max(self.tarPosition[1] - next, 0), min(self.tarPosition[1] + next, 2.3))
 
         y = 0.0912155
-        self.rand_rotation_y = R.from_euler('z', random.uniform(0, 360), degrees=True) # euler to mat return A matrix,which only use random z axes.
+        self.rand_rotation_y = R.from_euler('z', random.uniform(0, 360),
+                                            degrees=True)  # euler to mat return A matrix,which only use random z axes.
 
         x_ob = -1
         y_ob = -1
@@ -319,14 +312,18 @@ class Hunter(RobotSupervisor):
                 x_ob = random.uniform(0.2, 4.4)
                 y_ob = random.uniform(-0.3, 2.7)
                 d1 = (x_ob - x) * (x_ob - x) + (y_ob - y) * (y_ob - y)
-                d2 = (x_ob - self.tarPosition[0]) * (x_ob - self.tarPosition[0]) + (y_ob - self.tarPosition[1]) * (y_ob - self.tarPosition[1])
+                d2 = (x_ob - self.tarPosition[0]) * (x_ob - self.tarPosition[0]) + (y_ob - self.tarPosition[1]) * (
+                            y_ob - self.tarPosition[1])
 
-            ob = self.getFromDef("ob%d"%i)
+            ob = self.getFromDef("ob%d" % i)
             ob_position = ob.getField("translation")
             ob_position.setSFVec3f([x_ob, 0.0912155, y_ob])
             x_ob = -1
             y_ob = -1
 
+        ob = self.getFromDef("tar")
+        ob_position = ob.getField("translation")
+        ob_position.setSFVec3f([self.tarPosition[0], 0.0, self.tarPosition[1]])
 
         INITIAL = [x, y, z]
         trans_field = rb_node.getField("translation")
@@ -348,7 +345,7 @@ class Hunter(RobotSupervisor):
         Robot.step(self, self.timestep)  # 更新环境
         return self.get_observations()
 
-    def initialization(self, rb_node = None, x = 1, z = 0, rotation=200, Radius = None, tar = None, next = None):
+    def initialization(self, rb_node=None, x=1, z=0, rotation=200, Radius=None, tar=None, next=None):
         if rb_node == None:
             rb_node = self.getFromDef("yt")
 
@@ -356,16 +353,22 @@ class Hunter(RobotSupervisor):
             rb_node = rb_node
         self.reset()
         self.motorIn(0, 0)
-        if len(self.obs) != 0 :
+        if len(self.obs) != 0:
             for i in range(len(self.obs[0])):
-                ob = self.getFromDef("ob%d"%i)
+                ob = self.getFromDef("ob%d" % i)
                 ob_position = ob.getField("translation")
                 ob_position.setSFVec3f([self.obs[0][i][0], 0.0912155, self.obs[0][i][1]])
+
+        ob = self.getFromDef("tar")
+        ob_position = ob.getField("translation")
+        ob_position.setSFVec3f([self.tarPosition[0], 0.0, self.tarPosition[1]])
+
         y = 0.2
-        self.rand_rotation_y = R.from_euler('z', rotation, degrees=True) # euler to mat return A matrix,which only use random z axes.
+        self.rand_rotation_y = R.from_euler('z', rotation,
+                                            degrees=True)  # euler to mat return A matrix,which only use random z axes.
         INITIAL = [x, y, z]
         trans_field = rb_node.getField("translation")
-        trans_field.setSFVec3f(INITIAL) #
+        trans_field.setSFVec3f(INITIAL)  #
 
         rotation_field = rb_node.getField("rotation")
         quaternion = [0.707, -0.707, 0, 0]
@@ -414,7 +417,7 @@ class Hunter(RobotSupervisor):
                     del (self.data[i][j])
 
         for i in range(3):
-            self.data[i] = self.data[i][::5]
+            self.data[i] = self.data[i][::10]
 
         # 对齐motor数据的时间戳
         data_motor = [0] * len(self.data[1])  # 创建一个数组用来保存查找后的速度
@@ -445,7 +448,7 @@ class Hunter(RobotSupervisor):
         rotation = (math.atan2(self.data[2][0][2] - self.data[1][0][2],
                                self.data[2][0][0] - self.data[1][0][0])) * 180 / math.pi
 
-        self.initialization(x=x, z=y, rotation=rotation, tar=self.tarPosition,)
+        self.initialization(x=x, z=y, rotation=rotation, tar=self.tarPosition, )
         self.test_get_observations(0)
         self.disRewardOld = self.disReward
         for i in range(len(self.data[0])):
@@ -456,9 +459,10 @@ class Hunter(RobotSupervisor):
         gpsBack = self.gps_back.getValues()
         gpsFront = self.gps_front.getValues()
         self.tarPosition = []
-        self.tarPosition.append(gpsBack[0])  # x
-        self.tarPosition.append(gpsBack[2])  # y
+        self.tarPosition.append((gpsBack[0] + gpsFront[0]) / 2)  # x
+        self.tarPosition.append((gpsBack[2] + gpsFront[2]) / 2)  # y
         self.tarPosition.append(-math.atan2(gpsFront[2] - gpsBack[2], gpsFront[0] - gpsBack[0]))
+
 
     def test_get_observations(self, i):
 
@@ -494,7 +498,7 @@ class Hunter(RobotSupervisor):
         v = self.data[3][i][0]
         w = self.data[3][i][1]
         # print(v,w,-((v + w * 0.199) / (0.1)), -((v - w * 0.199) / (0.1)))
-        self.action = [-((v + w * 0.199) / (0.1))/5, -((v - w * 0.199) / (0.1))/5]
+        self.action = [-((v + w * 0.199) / (0.1)) / 5, -((v - w * 0.199) / (0.1)) / 5]
         self.CurrentSpeed = (self.action[0] + self.action[1]) / 2
 
         observation.append(normalize_to_range(np.clip(position[0] + noise_odom, 0.36, 4.25), 0.36, 4.25, -1, 1))
@@ -503,20 +507,20 @@ class Hunter(RobotSupervisor):
         observation.append(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1))
         observation.append(normalize_to_range(np.clip(self.disReward, -2.25, 2.25), -2.25, 2.25, -1, 1))
         observation.append(normalize_to_range(np.clip(self.angReward, -3.14, 3.14), -3.14, 3.14, -1, 1))
-        observation.append(normalize_to_range(np.clip(self.tarPosition[0], -0.67, 4), -0.67, 4, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.tarPosition[0], 0.67, 4), 0.67, 4, -1, 1))
         observation.append(normalize_to_range(np.clip(self.tarPosition[1], 0.2, 2.3), 0.2, 2.3, -1, 1))
         observation.append(normalize_to_range(np.clip(self.tarPosition[2], -3.14, 3.14), -3.14, 3.14, -1, 1))
         # observation.append(min(self.laserRange))
 
         # ******************************************************************************
-        self.laser_choose = [0, 30, 40, 60,
-                             90, 120, 140, 150,
-                             180, 210, 220, 240,
-                             270, 300, 320, 330]
-        self.crash_range = [0.353, 0.408, 0.456, 0.332,
-                            0.288, 0.332, 0.456, 0.408,
-                            0.353, 0.408, 0.456, 0.332,
-                            0.288,  0.332, 0.456, 0.408]
+        self.laser_choose = [0, 10, 20, 30, 40, 50, 60, 70, 80,
+                             90, 100, 110, 120, 130, 140, 150, 160, 170,
+                             180, 190, 200, 210, 220, 230, 240, 250, 260,
+                             270, 280, 290, 300, 310, 320, 330, 340, 350]
+        self.crash_range = [0.353, 0.358, 0.375, 0.408, 0.456, 0.376, 0.332, 0.306, 0.292,
+                            0.288, 0.292, 0.306, 0.332, 0.376, 0.456, 0.408, 0.375, 0.358,
+                            0.353, 0.358, 0.375, 0.408, 0.456, 0.376, 0.332, 0.306, 0.292,
+                            0.288, 0.292, 0.306, 0.332, 0.376, 0.456, 0.408, 0.375, 0.358]
         for choose in range(len(self.laser_choose)):
             self.laserRange[self.laser_choose[choose]] -= self.crash_range[choose]
         for choose in self.laser_choose:
@@ -524,4 +528,3 @@ class Hunter(RobotSupervisor):
         # ******************************************************************************
 
         return observation
-

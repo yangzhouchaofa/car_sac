@@ -14,18 +14,20 @@ class ValueNetwork(nn.Module):
         super(ValueNetwork, self).__init__()
 
         self.linear1 = nn.Linear(state_dim, hidden_dim)
-        self.linear2 = nn.Linear(hidden_dim, hidden_dim)
-        self.linear3 = nn.Linear(hidden_dim, hidden_dim)
-        self.linear4 = nn.Linear(hidden_dim, 1)
+        self.linear2 = nn.Linear(hidden_dim, 64)
+        self.linear3 = nn.Linear(64, 64)
+        self.linear4 = nn.Linear(64, hidden_dim)
+        self.linear5 = nn.Linear(hidden_dim, 1)
         # weights initialization
-        self.linear4.weight.data.uniform_(-init_w, init_w)
-        self.linear4.bias.data.uniform_(-init_w, init_w)
+        self.linear5.weight.data.uniform_(-init_w, init_w)
+        self.linear5.bias.data.uniform_(-init_w, init_w)
 
     def forward(self, state):
         x = F.relu(self.linear1(state))
         x = F.relu(self.linear2(x))
         x = F.relu(self.linear3(x))
-        x = self.linear4(x)
+        x = F.relu(self.linear4(x))
+        x = self.linear5(x)
         return x
 
 
@@ -34,19 +36,21 @@ class SoftQNetwork(nn.Module):
         super(SoftQNetwork, self).__init__()
 
         self.linear1 = nn.Linear(num_inputs + num_actions, hidden_size)
-        self.linear2 = nn.Linear(hidden_size, hidden_size)
-        self.linear3 = nn.Linear(hidden_size, hidden_size)
-        self.linear4 = nn.Linear(hidden_size, 1)
+        self.linear2 = nn.Linear(hidden_size, 64)
+        self.linear3 = nn.Linear(64, 64)
+        self.linear4 = nn.Linear(64, hidden_size)
+        self.linear5 = nn.Linear(hidden_size, 1)
 
-        self.linear4.weight.data.uniform_(-init_w, init_w)
-        self.linear4.bias.data.uniform_(-init_w, init_w)
+        self.linear5.weight.data.uniform_(-init_w, init_w)
+        self.linear5.bias.data.uniform_(-init_w, init_w)
 
     def forward(self, state, action):
         x = torch.cat([state, action], 1)  # the dim 0 is number of samples
         x = F.relu(self.linear1(x))
         x = F.relu(self.linear2(x))
         x = F.relu(self.linear3(x))
-        x = self.linear4(x)
+        x = F.relu(self.linear4(x))
+        x = self.linear5(x)
         return x
 
 
@@ -61,8 +65,9 @@ class PolicyNetwork(nn.Module):
 
         self.linear1 = nn.Linear(num_inputs, hidden_size)
         self.linear2 = nn.Linear(hidden_size, hidden_size)
-        self.linear3 = nn.Linear(hidden_size, hidden_size)
-        self.linear4 = nn.Linear(hidden_size, hidden_size)
+        self.linear3 = nn.Linear(hidden_size, 64)
+        self.linear4 = nn.Linear(64, 64)
+        self.linear5 = nn.Linear(64, hidden_size)
 
         self.mean_linear = nn.Linear(hidden_size, num_actions)
         self.mean_linear.weight.data.uniform_(-init_w, init_w)
@@ -80,6 +85,7 @@ class PolicyNetwork(nn.Module):
         x = F.relu(self.linear2(x))
         x = F.relu(self.linear3(x))
         x = F.relu(self.linear4(x))
+        x = F.relu(self.linear5(x))
 
         mean = (self.mean_linear(x))
         # mean    = F.leaky_relu(self.mean_linear(x))
