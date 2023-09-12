@@ -17,7 +17,7 @@ STEPS_PER_EPISODE = 300
 EPISODE_LIMIT = 500
 score_history_path = 'score/score_history'                   #############change
 score_history_continue_path = 'score/score_history_continue' ##############change
-fig_path = 'figs/score2.png'  #############change
+fig_path = 'figs/change_tar.png'  #############change
 path_history_path = 'path/path_history'                      #############change
 train = 'train'
 
@@ -32,14 +32,14 @@ def create_path(path):
 
 if __name__ == '__main__':
     print("Hello")
-    create_path("model/sac3/")           #############change
+    create_path("model/sac/")           #############change
     create_path("./figs/")
     create_path("./score/")
     create_path("./path/")
 
     # pass a path to load the pretrained models, and pass "" for training from scratch
-    save_path = 'model/sac3/'  #############change
-    load_path = 'model/sac3/'           #############change
+    save_path = 'model/sac/'  #############change
+    load_path = 'model/sac/'           #############change
     train = 'train'              #############change   train   train_continue    test
 
     if train == 'train':

@@ -15,8 +15,8 @@ from IPython.display import clear_output
 env_args = {
     "env_num": 1,
     "env_name": 'yt',
-    "max_step": 300,
-    "state_dim": 25,
+    "max_step": 150,
+    "state_dim": 45,
     "action_dim": 2,
     "if_discrete": False,
     "target_return": 200,
@@ -97,118 +97,200 @@ def train(save_path):
     #                                     target_entropy=-1. * args.action_dim)
     #         # print('score:',score)
 
-    for pre_load in range(20):
-        env.test(pre_load)
-        for _ in tqdm(range(10)):
-            x = (env.data[1][0][0] + env.data[2][0][0]) / 2
-            y = (env.data[1][0][2] + env.data[2][0][2]) / 2
-            rotation = (math.atan2(env.data[2][0][2] - env.data[1][0][2], env.data[2][0][0] - env.data[1][0][0]))*180/math.pi
+    # for pre_load in range(20):
+    #     env.test(pre_load)
+    #     for _ in tqdm(range(10)):
+    #         x = (env.data[1][0][0] + env.data[2][0][0]) / 2
+    #         y = (env.data[1][0][2] + env.data[2][0][2]) / 2
+    #         rotation = (math.atan2(env.data[2][0][2] - env.data[1][0][2], env.data[2][0][0] - env.data[1][0][0]))*180/math.pi
+    #
+    #         env.initialization(x = x, z = y, rotation=rotation, rb_node=rb_node, Radius=Radius, tar=env.tarPosition,
+    #                                                 next=next_target)
+    #         observation = env.test_get_observations(0)
+    #         env.disRewardOld = env.disReward
+    #         done = False
+    #         score = 0
+    #         for i in range(len(env.data[0])):
+    #             env.test_get_observations(i)
+    #             action = env.action
+    #             observation_new = env.get_observations()
+    #             reward = env.get_reward(action)
+    #             done = env.is_done()
+    #             env.step(action)
+    #             score += reward
+    #             if len(env.data[0]) - i < 10:
+    #                 replay_buffer.add(observation, action, reward, observation_new, done)
+    #             replay_buffer.add(observation, action, reward, observation_new, done)
+    #
+    #             observation = observation_new
+    #             if done == True:
+    #                 # print('done:',done)
+    #                 break
+    #             if replay_buffer.len() > batch_size:
+    #                 for i in range(update_itr):
+    #                     _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
+    #                                     target_entropy=-1. * args.action_dim)
+    #
+    #     count_done = []
+    #     for episodes in range(EPISODE_LIMIT):
+    #         if (np.mean(count_done[-10:]) > 0.7) and (len(count_done)>50):
+    #             break
+    #         observation = env.initialization(x = x, z = y, rotation=rotation,rb_node=rb_node, Radius=Radius, tar=env.tarPosition,
+    #                                                     next=next_target)
+    #         env.disRewardOld = env.disReward
+    #         done = False
+    #         score = 0
+    #         step = 0
+    #
+    #         while not done and step < STEPS_PER_EPISODE:
+    #             if frame_idx > explore_steps:
+    #                 action = agent.policy_net.get_action(observation, deterministic=DETERMINISTIC)
+    #             else:
+    #                 action = agent.policy_net.sample_action()
+    #             observation_new, reward, done, _ = env.step(action)
+    #             score += reward
+    #
+    #             replay_buffer.add(observation, action, reward, observation_new, done)
+    #
+    #             observation = observation_new
+    #             step += 1
+    #             frame_idx += 1
+    #
+    #             if replay_buffer.len() > batch_size:
+    #                 for i in range(update_itr):
+    #                     _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
+    #                                     target_entropy=-1. * args.action_dim)
+    #
+    #         step_sum += step
+    #         score_history.append(score)
+    #         avg_score = np.mean(score_history[-100:])
+    #
+    #         if episodes % 20 == 0 and episodes > 0:
+    #             plot(score_history)
+    #             np.save(score_history_path, score_history)
+    #             agent.save_model(model_path)
+    #             for _ in tqdm(range(10)):
+    #                 env.test(pre_load)
+    #                 x = (env.data[1][0][0] + env.data[2][0][0]) / 2
+    #                 y = (env.data[1][0][2] + env.data[2][0][2]) / 2
+    #                 rotation = (math.atan2(env.data[2][0][2] - env.data[1][0][2],
+    #                                        env.data[2][0][0] - env.data[1][0][0])) * 180 / math.pi
+    #
+    #                 env.initialization(x=x, z=y, rotation=rotation, rb_node=rb_node, Radius=Radius, tar=env.tarPosition,
+    #                                    next=next_target)
+    #                 observation = env.test_get_observations(0)
+    #                 env.disRewardOld = env.disReward
+    #                 done = False
+    #                 score = 0
+    #                 for i in range(len(env.data[0])):
+    #                     env.test_get_observations(i)
+    #                     action = env.action
+    #                     observation_new = env.get_observations()
+    #                     reward = env.get_reward(action)
+    #                     done = env.is_done()
+    #                     env.step(action)
+    #                     score += reward
+    #
+    #                     replay_buffer.add(observation, action, reward, observation_new, done)
+    #
+    #                     observation = observation_new
+    #                     if done == True:
+    #                         break
+    #                     if replay_buffer.len() > batch_size:
+    #                         for i in range(update_itr):
+    #                             _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
+    #                                             target_entropy=-1. * args.action_dim)
+    #
+    #         if env.complete:
+    #             count_done.append(1)
+    #         else:
+    #             count_done.append(0)
+    #
+    #
+    #
+    #         print('episode: {:^3d} | score: {:^10.2f} | avg_score: {:^10.2f} |step_sum: {} |'.format(episodes, score,
+    #                                                                                                  avg_score, step_sum))
 
-            env.initialization(x = x, z = y, rotation=rotation, rb_node=rb_node, Radius=Radius, tar=env.tarPosition,
-                                                    next=next_target)
-            observation = env.test_get_observations(0)
-            env.disRewardOld = env.disReward
-            done = False
-            score = 0
-            for i in range(len(env.data[0])):
-                env.test_get_observations(i)
-                action = env.action
-                observation_new = env.get_observations()
-                reward = env.get_reward(action)
-                done = env.is_done()
-                env.step(action)
-                score += reward
+    for episodes in range(50000):
+        if np.mean(count_done[-50:]) > 0.8:
+            next_target += 0.1  # 0, 1, 2, 3
+            count_done = []
 
-                replay_buffer.add(observation, action, reward, observation_new, done)
+        observation = env.random_initialization(rb_node=rb_node, Radius=Radius, next=next_target)
+        env.disRewardOld = env.disReward
+        done = False
+        score = 0
+        step = 0
 
-                observation = observation_new
-                if done == True:
-                    # print('done:',done)
-                    break
-                if replay_buffer.len() > batch_size:
-                    for i in range(update_itr):
-                        _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
-                                        target_entropy=-1. * args.action_dim)
-
-        count_done = []
-        for episodes in range(EPISODE_LIMIT):
-            if (np.mean(count_done[-50:]) > 0.6) and (len(count_done)>50):
-                break
-            observation = env.initialization(x = x, z = y, rotation=rotation,rb_node=rb_node, Radius=Radius, tar=env.tarPosition,
-                                                        next=next_target)
-            env.disRewardOld = env.disReward
-            done = False
-            score = 0
-            step = 0
-
-            while not done and step < STEPS_PER_EPISODE:
-                if frame_idx > explore_steps:
-                    action = agent.policy_net.get_action(observation, deterministic=DETERMINISTIC)
-                else:
-                    action = agent.policy_net.sample_action()
-                observation_new, reward, done, _ = env.step(action)
-                score += reward
-
-                replay_buffer.add(observation, action, reward, observation_new, done)
-
-                observation = observation_new
-                step += 1
-                frame_idx += 1
-
-                if replay_buffer.len() > batch_size:
-                    for i in range(update_itr):
-                        _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
-                                        target_entropy=-1. * args.action_dim)
-
-            step_sum += step
-            score_history.append(score)
-            avg_score = np.mean(score_history[-100:])
-
-            if episodes % 20 == 0 and episodes > 0:
-                plot(score_history)
-                np.save(score_history_path, score_history)
-                agent.save_model(model_path)
-                for _ in tqdm(range(10)):
-                    env.test(pre_load)
-                    x = (env.data[1][0][0] + env.data[2][0][0]) / 2
-                    y = (env.data[1][0][2] + env.data[2][0][2]) / 2
-                    rotation = (math.atan2(env.data[2][0][2] - env.data[1][0][2],
-                                           env.data[2][0][0] - env.data[1][0][0])) * 180 / math.pi
-
-                    env.initialization(x=x, z=y, rotation=rotation, rb_node=rb_node, Radius=Radius, tar=env.tarPosition,
-                                       next=next_target)
-                    observation = env.test_get_observations(0)
-                    env.disRewardOld = env.disReward
-                    done = False
-                    score = 0
-                    for i in range(len(env.data[0])):
-                        env.test_get_observations(i)
-                        action = env.action
-                        observation_new = env.get_observations()
-                        reward = env.get_reward(action)
-                        done = env.is_done()
-                        env.step(action)
-                        score += reward
-
-                        replay_buffer.add(observation, action, reward, observation_new, done)
-
-                        observation = observation_new
-                        if done == True:
-                            break
-                        if replay_buffer.len() > batch_size:
-                            for i in range(update_itr):
-                                _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
-                                                target_entropy=-1. * args.action_dim)
-
-            if env.complete:
-                count_done.append(1)
+        while not done and step < STEPS_PER_EPISODE:
+            if frame_idx > explore_steps:
+                action = agent.policy_net.get_action(observation, deterministic=DETERMINISTIC)
             else:
-                count_done.append(0)
+                action = agent.policy_net.sample_action()
+            observation_new, reward, done, _ = env.step(action)
+            score += reward
+
+            replay_buffer.add(observation, action, reward, observation_new, done)
+
+            observation = observation_new
+            step += 1
+            frame_idx += 1
+
+            if replay_buffer.len() > batch_size:
+                for i in range(update_itr):
+                    _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
+                                    target_entropy=-1. * args.action_dim)
+
+        step_sum += step
+        score_history.append(score)
+        avg_score = np.mean(score_history[-100:])
+
+        if episodes % 20 == 0 and episodes > 0:
+            plot(score_history)
+            np.save(score_history_path, score_history)
+            agent.save_model(model_path)
+            # for i in tqdm(range(20)):
+            #     env.test(i)
+            #     x = (env.data[1][0][0] + env.data[2][0][0]) / 2
+            #     y = (env.data[1][0][2] + env.data[2][0][2]) / 2
+            #     rotation = (math.atan2(env.data[2][0][2] - env.data[1][0][2],
+            #                            env.data[2][0][0] - env.data[1][0][0])) * 180 / math.pi
+            #
+            #     env.initialization(x=x, z=y, rotation=rotation, rb_node=rb_node, Radius=Radius, tar=env.tarPosition,
+            #                        next=next_target)
+            #     observation = env.test_get_observations(0)
+            #     env.disRewardOld = env.disReward
+            #     done = False
+            #     score = 0
+            #     for i in range(len(env.data[0])):
+            #         env.test_get_observations(i)
+            #         action = env.action
+            #         observation_new = env.get_observations()
+            #         reward = env.get_reward(action)
+            #         done = env.is_done()
+            #         env.step(action)
+            #         score += reward
+            #         if (len(env.data[0]) - i < 10) and (next_target < 0.2):
+            #             replay_buffer.add(observation, action, reward, observation_new, done)
+            #         elif (next_target >= 0.2):
+            #             replay_buffer.add(observation, action, reward, observation_new, done)
+            #
+            #         observation = observation_new
+            #         if done == True:
+            #             break
+            #         if replay_buffer.len() > batch_size:
+            #             for i in range(update_itr):
+            #                 _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
+            #                                 target_entropy=-1. * args.action_dim)
 
 
+        if env.complete:
+            count_done.append(1)
+        else:
+            count_done.append(0)
 
-            print('episode: {:^3d} | score: {:^10.2f} | avg_score: {:^10.2f} |step_sum: {} |'.format(episodes, score,
-                                                                                                     avg_score, step_sum))
+        print('episode: {:^3d} | score: {:^10.2f} | avg_score: {:^10.2f} |step_sum: {} |'.format(episodes, score,
+                                                                                                 avg_score, step_sum))
 
 
 def train_continue(load_path):
