@@ -32,14 +32,14 @@ def create_path(path):
 
 if __name__ == '__main__':
     print("Hello")
-    create_path("model/sac/")           #############change
+    create_path("model/sac0/")           #############change
     create_path("./figs/")
     create_path("./score/")
     create_path("./path/")
 
     # pass a path to load the pretrained models, and pass "" for training from scratch
-    save_path = 'model/sac/'  #############change
-    load_path = 'model/sac/'           #############change
+    save_path = 'model/sac0/'  #############change
+    load_path = 'model/sac0/'           #############change
     train = 'train_continue'              #############change   train   train_continue    test
 
     if train == 'train':

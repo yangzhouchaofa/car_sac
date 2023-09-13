@@ -108,8 +108,11 @@ class Hunter(RobotSupervisor):
     def SpeedChange(self):
         self.Speed_list.append(self.CurrentSpeed)
         if (len(self.Speed_list) <= 1) or (len(self.w_list) <= 1):
+        # if (len(self.Speed_list) <= 1):
             return False
-        elif (self.Speed_list[-2] * self.Speed_list[-1] < -0.1) or (self.w_list[-2] * self.w_list[-1] < -0.1):
+        elif (self.Speed_list[-2] * self.Speed_list[-1] < -0.1) or \
+             (abs(self.Speed_list[-2] + self.Speed_list[-1]) < 0.2 and self.w_list[-2] * self.w_list[-1] < -0.1):
+        # elif (self.Speed_list[-2] * self.Speed_list[-1] < -0.1):
             return True
         else:
             return False

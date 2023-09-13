@@ -295,21 +295,21 @@ def train(save_path):
 
 def train_continue(load_path):
     agent.load_model(load_path)
-    score_history = np.load(score_history_path + '.npy')
-    score_history = list(score_history)
-    episodes = len(score_history)
+    # score_history = np.load(score_history_path + '.npy')
+    # score_history = list(score_history)
+    # episodes = len(score_history)
+    score_history = []
     step_sum = 0
-    count_done = [0]
+    count_done = []
     Radius = 0.5
     next_target = 0
-    ep = 0
 
     model_path = load_path
     frame_idx = 0
     explore_steps = 0  # for random action sampling in the beginning of training
 
     for episodes in range(50000):
-        if np.mean(count_done[-20:]) > 0.8:
+        if (np.mean(count_done[-50:]) > 0.8) and len(count_done) > 50 :
             next_target += 0.1  # 0, 1, 2, 3
             count_done = []
 
