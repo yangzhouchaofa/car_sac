@@ -16,7 +16,7 @@ env_args = {
     "env_num": 1,
     "env_name": 'yt',
     "max_step": 150,
-    "state_dim": 45,
+    "state_dim": 46,
     "action_dim": 2,
     "if_discrete": False,
     "target_return": 200,
@@ -249,39 +249,40 @@ def train(save_path):
             plot(score_history)
             np.save(score_history_path, score_history)
             agent.save_model(model_path)
-            # for i in tqdm(range(20)):
-            #     env.test(i)
-            #     x = (env.data[1][0][0] + env.data[2][0][0]) / 2
-            #     y = (env.data[1][0][2] + env.data[2][0][2]) / 2
-            #     rotation = (math.atan2(env.data[2][0][2] - env.data[1][0][2],
-            #                            env.data[2][0][0] - env.data[1][0][0])) * 180 / math.pi
-            #
-            #     env.initialization(x=x, z=y, rotation=rotation, rb_node=rb_node, Radius=Radius, tar=env.tarPosition,
-            #                        next=next_target)
-            #     observation = env.test_get_observations(0)
-            #     env.disRewardOld = env.disReward
-            #     done = False
-            #     score = 0
-            #     for i in range(len(env.data[0])):
-            #         env.test_get_observations(i)
-            #         action = env.action
-            #         observation_new = env.get_observations()
-            #         reward = env.get_reward(action)
-            #         done = env.is_done()
-            #         env.step(action)
-            #         score += reward
-            #         if (len(env.data[0]) - i < 10) and (next_target < 0.2):
-            #             replay_buffer.add(observation, action, reward, observation_new, done)
-            #         elif (next_target >= 0.2):
-            #             replay_buffer.add(observation, action, reward, observation_new, done)
-            #
-            #         observation = observation_new
-            #         if done == True:
-            #             break
-            #         if replay_buffer.len() > batch_size:
-            #             for i in range(update_itr):
-            #                 _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
-            #                                 target_entropy=-1. * args.action_dim)
+            if avg_score < -10:
+                for i in tqdm(range(20)):
+                    env.test(i)
+                    x = (env.data[1][0][0] + env.data[2][0][0]) / 2
+                    y = (env.data[1][0][2] + env.data[2][0][2]) / 2
+                    rotation = (math.atan2(env.data[2][0][2] - env.data[1][0][2],
+                                           env.data[2][0][0] - env.data[1][0][0])) * 180 / math.pi
+
+                    env.initialization(x=x, z=y, rotation=rotation, rb_node=rb_node, Radius=Radius, tar=env.tarPosition,
+                                       next=next_target)
+                    observation = env.test_get_observations(0)
+                    env.disRewardOld = env.disReward
+                    done = False
+                    score = 0
+                    for i in range(len(env.data[0])):
+                        env.test_get_observations(i)
+                        action = env.action
+                        observation_new = env.get_observations()
+                        reward = env.get_reward(action)
+                        done = env.is_done()
+                        env.step(action)
+                        score += reward
+                        if (len(env.data[0]) - i < (next_target + 1)*10) and (next_target < 0.5):
+                            replay_buffer.add(observation, action, reward, observation_new, done)
+                        elif (next_target >= 0.5):
+                            replay_buffer.add(observation, action, reward, observation_new, done)
+
+                        observation = observation_new
+                        if done == True:
+                            break
+                        if replay_buffer.len() > batch_size:
+                            for i in range(update_itr):
+                                _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
+                                                target_entropy=-1. * args.action_dim)
 
 
         if env.complete:
@@ -346,6 +347,41 @@ def train_continue(load_path):
             plot(score_history)
             np.save(score_history_path, score_history)
             agent.save_model(model_path)
+            if avg_score < -10:
+                for i in tqdm(range(20)):
+                    env.test(i)
+                    x = (env.data[1][0][0] + env.data[2][0][0]) / 2
+                    y = (env.data[1][0][2] + env.data[2][0][2]) / 2
+                    rotation = (math.atan2(env.data[2][0][2] - env.data[1][0][2],
+                                           env.data[2][0][0] - env.data[1][0][0])) * 180 / math.pi
+
+                    env.initialization(x=x, z=y, rotation=rotation, rb_node=rb_node, Radius=Radius, tar=env.tarPosition,
+                                       next=next_target)
+                    observation = env.test_get_observations(0)
+                    env.disRewardOld = env.disReward
+                    done = False
+                    score = 0
+                    for i in range(len(env.data[0])):
+                        env.test_get_observations(i)
+                        action = env.action
+                        observation_new = env.get_observations()
+                        reward = env.get_reward(action)
+                        done = env.is_done()
+                        env.step(action)
+                        score += reward
+                        if (len(env.data[0]) - i < (next_target + 1)*10) and (next_target < 0.5):
+                            replay_buffer.add(observation, action, reward, observation_new, done)
+                        elif (next_target >= 0.5):
+                            replay_buffer.add(observation, action, reward, observation_new, done)
+
+                        observation = observation_new
+                        if done == True:
+                            break
+                        if replay_buffer.len() > batch_size:
+                            for i in range(update_itr):
+                                _ = agent.learn(batch_size, reward_scale=10., auto_entropy=AUTO_ENTROPY,
+                                                target_entropy=-1. * args.action_dim)
+
 
 
         if env.complete:

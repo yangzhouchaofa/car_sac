@@ -166,10 +166,11 @@ class Hunter(RobotSupervisor):
         observation.append(normalize_to_range(np.clip(self.position[1] + noise_odom, -0.22, 2.61), -0.22, 2.61, -1, 1))
         observation.append(normalize_to_range(np.clip(self.position[2], -3.14, 3.14), -3.14, 3.14, -1, 1))
         observation.append(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1))
-        observation.append(normalize_to_range(np.clip(self.disReward, -2.25, 2.25), -2.25, 2.25, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.w, -1, 1), -1, 1, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.disReward, -4.8, 4.8), -4.8, 4.8, -1, 1))
         observation.append(normalize_to_range(np.clip(self.angReward, -3.14, 3.14), -3.14, 3.14, -1, 1))
-        observation.append(normalize_to_range(np.clip(self.tarPosition[0], 0.67, 4), 0.67, 4, -1, 1))
-        observation.append(normalize_to_range(np.clip(self.tarPosition[1], 0.2, 2.3), 0.2, 2.3, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.tarPosition[0], 0.36, 4.25), 0.36, 4.25, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.tarPosition[1], -0.22, 2.61), -0.22, 2.61, -1, 1))
         observation.append(normalize_to_range(np.clip(self.tarPosition[2], -3.14, 3.14), -3.14, 3.14, -1, 1))
         # observation.append(min(self.laserRange))
 
@@ -196,7 +197,7 @@ class Hunter(RobotSupervisor):
         self.motorIn(action[0] * 5, action[1] * 5)
         # print(action)
         self.CurrentSpeed = (action[0] + action[1]) / 2
-        self.w = action[0] - action[1]
+        self.w = (action[0] - action[1]) / 2
 
     def get_reward(self, action):
         reward = 0
@@ -227,7 +228,8 @@ class Hunter(RobotSupervisor):
         if self.disReward <= self.DistanceThreshold and self.car_crash() is False:
             temp = 0
             if abs(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold \
-                    and angleDis < self.RotationThreshold:
+                    and angleDis < self.RotationThreshold\
+                    and (normalize_to_range(np.clip(self.w, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold :
                 temp += 40
                 if angleDis > 0:
                     temp += -40 * normalize(angleDis, 0, self.RotationThreshold)
@@ -258,7 +260,8 @@ class Hunter(RobotSupervisor):
             return False
         elif self.disReward <= self.DistanceThreshold and \
                 abs(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold and \
-                abs(self.angReward) < self.RotationThreshold:  # math.pi / 2
+                abs(self.angReward) < self.RotationThreshold and \
+                abs(normalize_to_range(np.clip(self.w, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold :  # math.pi / 2
             self.complete = 1
             return True
         else:
@@ -508,10 +511,11 @@ class Hunter(RobotSupervisor):
         observation.append(normalize_to_range(np.clip(position[1] + noise_odom, -0.22, 2.61), -0.22, 2.61, -1, 1))
         observation.append(normalize_to_range(np.clip(position[2], -3.14, 3.14), -3.14, 3.14, -1, 1))
         observation.append(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1))
-        observation.append(normalize_to_range(np.clip(self.disReward, -2.25, 2.25), -2.25, 2.25, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.w, -1, 1), -1, 1, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.disReward, -4.8, 4.8), -4.8, 4.8, -1, 1))
         observation.append(normalize_to_range(np.clip(self.angReward, -3.14, 3.14), -3.14, 3.14, -1, 1))
-        observation.append(normalize_to_range(np.clip(self.tarPosition[0], 0.67, 4), 0.67, 4, -1, 1))
-        observation.append(normalize_to_range(np.clip(self.tarPosition[1], 0.2, 2.3), 0.2, 2.3, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.tarPosition[0], 0.36, 4.25), 0.36, 4.25, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.tarPosition[1], -0.22, 2.61), -0.22, 2.61, -1, 1))
         observation.append(normalize_to_range(np.clip(self.tarPosition[2], -3.14, 3.14), -3.14, 3.14, -1, 1))
         # observation.append(min(self.laserRange))
 
