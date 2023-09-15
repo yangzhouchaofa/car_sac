@@ -32,15 +32,15 @@ def create_path(path):
 
 if __name__ == '__main__':
     print("Hello")
-    create_path("model/sac1/")           #############change
+    create_path("model/sac2/")           #############change
     create_path("./figs/")
     create_path("./score/")
     create_path("./path/")
 
     # pass a path to load the pretrained models, and pass "" for training from scratch
-    save_path = 'model/sac1/'  #############change
-    load_path = 'model/sac1/'           #############change
-    train = 'train_continue'              #############change   train   train_continue    test
+    save_path = 'model/sac2/'  #############change
+    load_path = 'model/sac2/'           #############change
+    train = 'test'              #############change   train   train_continue    test
 
     if train == 'train':
         SAC_runner.train(save_path)

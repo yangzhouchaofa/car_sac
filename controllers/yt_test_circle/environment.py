@@ -111,7 +111,7 @@ class Hunter(RobotSupervisor):
         # if (len(self.Speed_list) <= 1):
             return False
         elif (self.Speed_list[-2] * self.Speed_list[-1] < -0.1) or \
-             (abs(self.Speed_list[-2] + self.Speed_list[-1]) < 0.2 and self.w_list[-2] * self.w_list[-1] < -0.1):
+             (abs(self.Speed_list[-2] + self.Speed_list[-1]) < 0.2 and self.w_list[-2] * self.w_list[-1] < 0):
         # elif (self.Speed_list[-2] * self.Speed_list[-1] < -0.1):
             return True
         else:
@@ -209,7 +209,7 @@ class Hunter(RobotSupervisor):
         if deltaDis > 0 and self.car_crash() is False:
             if (int)(self.disReward / self.DistanceRewardInterval) < (int)(
                     self.disRewardOld / self.DistanceRewardInterval):
-                reward += 0.1 * normalize_to_range(np.clip(2.25 - self.disReward, 0, 2.25), 0, 2.25, 0, 1)
+                reward += 0.1 * normalize_to_range(np.clip(4.8 - self.disReward, 0, 4.8), 0, 4.8, 0, 1)
             if angleDis < math.pi / 2:
                 reward += 0.1 * normalize_to_range(math.pi / 2 - angleDis, 0, math.pi / 2, 0, 1)
 
@@ -229,7 +229,7 @@ class Hunter(RobotSupervisor):
             temp = 0
             if abs(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold \
                     and angleDis < self.RotationThreshold\
-                    and (normalize_to_range(np.clip(self.w, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold :
+                    and abs(normalize_to_range(np.clip(self.w, -1, 1), -1, 1, -1, 1)) <= 0.1 :
                 temp += 40
                 if angleDis > 0:
                     temp += -40 * normalize(angleDis, 0, self.RotationThreshold)
@@ -306,9 +306,13 @@ class Hunter(RobotSupervisor):
 
         x = random.uniform(max(self.tarPosition[0] - next, 0.67), min(self.tarPosition[0] + next, 4))
         z = random.uniform(max(self.tarPosition[1] - next, 0), min(self.tarPosition[1] + next, 2.3))
+        if next < 1:
+            w = (random.uniform(max(self.tarPosition[2] - next,-3.14), min(self.tarPosition[2] + next, 3.14))/3.14)*180
+        else:
+            w = random.uniform(0, 360)
 
         y = 0.0912155
-        self.rand_rotation_y = R.from_euler('z', random.uniform(0, 360),
+        self.rand_rotation_y = R.from_euler('z', w,
                                             degrees=True)  # euler to mat return A matrix,which only use random z axes.
 
         x_ob = -1
