@@ -107,12 +107,12 @@ class Hunter(RobotSupervisor):
 
     def SpeedChange(self):
         self.Speed_list.append(self.CurrentSpeed)
+        # if len(self.Speed_list) <= 1:
         if (len(self.Speed_list) <= 1) or (len(self.w_list) <= 1):
-        # if (len(self.Speed_list) <= 1):
             return False
+        # elif self.Speed_list[-2] * self.Speed_list[-1] < -0.1:
         elif (self.Speed_list[-2] * self.Speed_list[-1] < -0.1) or \
-             (abs(self.Speed_list[-2] + self.Speed_list[-1]) < 0.2 and self.w_list[-2] * self.w_list[-1] < 0):
-        # elif (self.Speed_list[-2] * self.Speed_list[-1] < -0.1):
+                 (abs(self.Speed_list[-2] + self.Speed_list[-1]) < 0.2 and self.w_list[-2] * self.w_list[-1] < 0):
             return True
         else:
             return False
@@ -167,7 +167,7 @@ class Hunter(RobotSupervisor):
         observation.append(normalize_to_range(np.clip(self.position[2], -3.14, 3.14), -3.14, 3.14, -1, 1))
         observation.append(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1))
         observation.append(normalize_to_range(np.clip(self.w, -1, 1), -1, 1, -1, 1))
-        observation.append(normalize_to_range(np.clip(self.disReward, -4.8, 4.8), -4.8, 4.8, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.disReward, 0, 4.8), 0, 4.8, -1, 1))
         observation.append(normalize_to_range(np.clip(self.angReward, -3.14, 3.14), -3.14, 3.14, -1, 1))
         observation.append(normalize_to_range(np.clip(self.tarPosition[0], 0.36, 4.25), 0.36, 4.25, -1, 1))
         observation.append(normalize_to_range(np.clip(self.tarPosition[1], -0.22, 2.61), -0.22, 2.61, -1, 1))
@@ -197,7 +197,6 @@ class Hunter(RobotSupervisor):
         self.motorIn(action[0] * 5, action[1] * 5)
         # print(action)
         self.CurrentSpeed = (action[0] + action[1]) / 2
-        self.w = (action[0] - action[1]) / 2
 
     def get_reward(self, action):
         reward = 0
@@ -209,7 +208,7 @@ class Hunter(RobotSupervisor):
         if deltaDis > 0 and self.car_crash() is False:
             if (int)(self.disReward / self.DistanceRewardInterval) < (int)(
                     self.disRewardOld / self.DistanceRewardInterval):
-                reward += 0.1 * normalize_to_range(np.clip(4.8 - self.disReward, 0, 4.8), 0, 4.8, 0, 1)
+                reward += 0.1 * normalize_to_range(np.clip(2.25 - self.disReward, 0, 2.25), 0, 2.25, 0, 1)
             if angleDis < math.pi / 2:
                 reward += 0.1 * normalize_to_range(math.pi / 2 - angleDis, 0, math.pi / 2, 0, 1)
 
@@ -228,8 +227,7 @@ class Hunter(RobotSupervisor):
         if self.disReward <= self.DistanceThreshold and self.car_crash() is False:
             temp = 0
             if abs(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold \
-                    and angleDis < self.RotationThreshold\
-                    and abs(normalize_to_range(np.clip(self.w, -1, 1), -1, 1, -1, 1)) <= 0.1 :
+                    and angleDis < self.RotationThreshold:
                 temp += 40
                 if angleDis > 0:
                     temp += -40 * normalize(angleDis, 0, self.RotationThreshold)
@@ -260,8 +258,7 @@ class Hunter(RobotSupervisor):
             return False
         elif self.disReward <= self.DistanceThreshold and \
                 abs(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold and \
-                abs(self.angReward) < self.RotationThreshold and \
-                abs(normalize_to_range(np.clip(self.w, -1, 1), -1, 1, -1, 1)) <= self.SpeedTheshold :  # math.pi / 2
+                abs(self.angReward) < self.RotationThreshold:  # math.pi / 2
             self.complete = 1
             return True
         else:
@@ -306,17 +303,15 @@ class Hunter(RobotSupervisor):
 
         x = random.uniform(max(self.tarPosition[0] - next, 0.67), min(self.tarPosition[0] + next, 4))
         z = random.uniform(max(self.tarPosition[1] - next, 0), min(self.tarPosition[1] + next, 2.3))
-        if next < 1:
-            w = (random.uniform(max(self.tarPosition[2] - next,-3.14), min(self.tarPosition[2] + next, 3.14))/3.14)*180
-        else:
-            w = random.uniform(0, 360)
 
         y = 0.0912155
-        self.rand_rotation_y = R.from_euler('z', w,
+        self.rand_rotation_y = R.from_euler('z', random.uniform(0, 360),
                                             degrees=True)  # euler to mat return A matrix,which only use random z axes.
 
         x_ob = -1
         y_ob = -1
+        self.obs_x = []
+        self.obs_y = []
         for i in range(5):
             while ((x_ob == -1) or (d2 <= 1) or (d1 <= 1)):
                 x_ob = random.uniform(0.2, 4.4)
@@ -324,6 +319,8 @@ class Hunter(RobotSupervisor):
                 d1 = (x_ob - x) * (x_ob - x) + (y_ob - y) * (y_ob - y)
                 d2 = (x_ob - self.tarPosition[0]) * (x_ob - self.tarPosition[0]) + (y_ob - self.tarPosition[1]) * (
                             y_ob - self.tarPosition[1])
+            self.obs_x.append(x_ob)
+            self.obs_y.append(y_ob)
 
             ob = self.getFromDef("ob%d" % i)
             ob_position = ob.getField("translation")
@@ -516,7 +513,7 @@ class Hunter(RobotSupervisor):
         observation.append(normalize_to_range(np.clip(position[2], -3.14, 3.14), -3.14, 3.14, -1, 1))
         observation.append(normalize_to_range(np.clip(self.CurrentSpeed, -1, 1), -1, 1, -1, 1))
         observation.append(normalize_to_range(np.clip(self.w, -1, 1), -1, 1, -1, 1))
-        observation.append(normalize_to_range(np.clip(self.disReward, -4.8, 4.8), -4.8, 4.8, -1, 1))
+        observation.append(normalize_to_range(np.clip(self.disReward, 0, 4.8), 0, 4.8, -1, 1))
         observation.append(normalize_to_range(np.clip(self.angReward, -3.14, 3.14), -3.14, 3.14, -1, 1))
         observation.append(normalize_to_range(np.clip(self.tarPosition[0], 0.36, 4.25), 0.36, 4.25, -1, 1))
         observation.append(normalize_to_range(np.clip(self.tarPosition[1], -0.22, 2.61), -0.22, 2.61, -1, 1))
